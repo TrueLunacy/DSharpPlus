@@ -32,11 +32,11 @@ public class DiscordRestClient : BaseDiscordClient
 
     public TokenType TokenType { get; }
 
-    public DiscordRestClient(RestClientOptions options, string token, TokenType tokenType, ILogger? logger = null) : base()
+    public DiscordRestClient(RestClientOptions options, string token, TokenType tokenType, HttpClient? httpClient = null, ILogger? logger = null) : base()
     {
         string headerTokenType = tokenType == TokenType.Bot ? "Bot" : "Bearer";
         
-        HttpClient httpClient = new();
+        httpClient ??= new();
         httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", $"{headerTokenType} {token}");
         
         this.ApiClient = new(new
