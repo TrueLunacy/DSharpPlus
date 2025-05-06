@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
 using DSharpPlus.Entities.AuditLogs;
+using DSharpPlus.Exceptions;
 using DSharpPlus.Metrics;
 using DSharpPlus.Net.Abstractions;
 using DSharpPlus.Net.Serialization;
@@ -1204,6 +1205,42 @@ public sealed class DiscordApiClient
         return JsonConvert.DeserializeObject<DiscordGuildWelcomeScreen>(res.Response!)!;
     }
 
+    internal async ValueTask<DiscordVoiceState> GetCurrentUserVoiceStateAsync(ulong guildId)
+    {
+        RestRequest request = new()
+        {
+            Route = $"{Endpoints.GUILDS}/{guildId}/{Endpoints.VOICE_STATES}/:user_id",
+            Url = $"{Endpoints.GUILDS}/{guildId}/{Endpoints.VOICE_STATES}/{Endpoints.ME}",
+            Method = HttpMethod.Get
+        };
+
+        RestResponse res = await this.rest.ExecuteRequestAsync(request);
+
+        DiscordVoiceState result = JsonConvert.DeserializeObject<DiscordVoiceState>(res.Response!)!;
+
+        result.Discord = this.discord!;
+
+        return result;
+    }
+    
+    internal async ValueTask<DiscordVoiceState> GetUserVoiceStateAsync(ulong guildId, ulong userId)
+    {
+        RestRequest request = new()
+        {
+            Route = $"{Endpoints.GUILDS}/{guildId}/{Endpoints.VOICE_STATES}/:user_id",
+            Url = $"{Endpoints.GUILDS}/{guildId}/{Endpoints.VOICE_STATES}/{userId}",
+            Method = HttpMethod.Get
+        };
+
+        RestResponse res = await this.rest.ExecuteRequestAsync(request);
+
+        DiscordVoiceState result = JsonConvert.DeserializeObject<DiscordVoiceState>(res.Response!)!;
+
+        result.Discord = this.discord!;
+
+        return result;
+    }
+    
     internal async ValueTask UpdateCurrentUserVoiceStateAsync
     (
         ulong guildId,
@@ -2438,7 +2475,7 @@ public sealed class DiscordApiClient
         Optional<string> content = default,
         Optional<IEnumerable<DiscordEmbed>> embeds = default,
         Optional<IEnumerable<IMention>> mentions = default,
-        IReadOnlyList<DiscordActionRowComponent>? components = null,
+        IReadOnlyList<DiscordComponent>? components = null,
         IReadOnlyList<DiscordMessageFile>? files = null,
         DiscordMessageFlags? flags = null,
         IEnumerable<DiscordAttachment>? attachments = null
@@ -4889,6 +4926,7 @@ public sealed class DiscordApiClient
             AvatarUrl = builder.AvatarUrl.HasValue ? builder.AvatarUrl.Value : null,
             IsTTS = builder.IsTTS,
             Embeds = builder.Embeds,
+            Flags = builder.Flags,
             Components = builder.Components,
             Poll = builder.Poll?.BuildInternal(),
         };
@@ -4906,6 +4944,7 @@ public sealed class DiscordApiClient
         string route = $"{Endpoints.WEBHOOKS}/{webhookId}/:webhook_token";
         QueryUriBuilder url = new($"{Endpoints.WEBHOOKS}/{webhookId}/{webhookToken}");
         url.AddParameter("wait", "true");
+        url.AddParameter("with_components", "true");
 
         if (builder.ThreadId.HasValue)
         {
@@ -5007,6 +5046,7 @@ public sealed class DiscordApiClient
             Content = builder.Content,
             Embeds = builder.Embeds,
             Mentions = mentions,
+            Flags = builder.Flags,
             Components = builder.Components,
             Attachments = attachments
         };
@@ -6079,6 +6119,7 @@ public sealed class DiscordApiClient
                 Content = builder.Content,
                 Embeds = builder.Embeds,
                 Mentions = mentions,
+                Flags = builder.Flags,
                 Components = builder.Components,
                 Attachments = attachments
             };
@@ -6161,7 +6202,7 @@ public sealed class DiscordApiClient
             Content = builder.Content,
             IsTTS = builder.IsTTS,
             Embeds = builder.Embeds,
-            Flags = builder.flags,
+            Flags = builder.Flags,
             Components = builder.Components
         };
 
